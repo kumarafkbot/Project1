@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mahto Ji Ke Dalan</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #1a0a08; --surface: #231210; --surface2: #2e1a18;
+  --border: #4a2020; --accent: rgb(168,66,45); --accent-h: rgb(145,55,37);
+  --text: #f5e6e4; --muted: #a07870; --danger: #e74c3c;
+  --success: #2ecc71; --me: rgb(168,66,45); --them: #2e1a18;
+  --sw: 320px;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+.screen { width: 100%; height: 100vh; }
+.hidden { display: none !important; }
+input, button { font-family: inherit; }
+
+/* ── Login transition animations ─────────────────────────────── */
+@keyframes slideUpFadeOut {
+  0%   { transform: translateY(0);    opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+@keyframes slideUpFadeIn {
+  0%   { transform: translateY(60px); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 1; }
+}
+.anim-exit {
+  animation: slideUpFadeOut 0.45s cubic-bezier(.4,0,.2,1) forwards;
+  pointer-events: none;
+}
+.anim-enter {
+  animation: slideUpFadeIn 0.45s cubic-bezier(.4,0,.2,1) forwards;
+}
+
+/* Glass inputs */
+.glass-input {
+  width: 100%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  backdrop-filter: blur(4px);
+}
+.glass-input::placeholder { color: rgba(255,255,255,0.4); }
+.glass-input:focus { border-color: rgba(168,66,45,0.9); background: rgba(255,255,255,0.15); }
+.glass-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: .5px; }
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; backdrop-filter: blur(4px);
+}
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px; width: 100%; max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+.modal-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px; color: var(--text);
+  font-size: 14px; outline: none; margin-bottom: 12px;
+}
+.modal-input:focus { border-color: var(--accent); }
+.member-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(168,66,45,.2); border: 1px solid rgba(168,66,45,.4);
+  border-radius: 20px; padding: 4px 10px; font-size: 13px; margin: 3px;
+}
+.chip-remove { cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; background: none; border: none; padding: 0; }
+.chip-remove:hover { color: var(--danger); }
+.modal-btn-row { display: flex; gap: 10px; margin-top: 20px; }
+.btn-accent { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-accent:hover { background: var(--accent-h); }
+.btn-ghost { flex: 1; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 14px; cursor: pointer; }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.modal-err { color: #ff8a80; font-size: 13px; margin-top: -4px; margin-bottom: 4px; min-height: 18px; }
+
+/* Group avatar */
+.grp-av { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+
+/* ── Sidebar jute/warli theme ──────────────────────────────── */
+#sidebar {
+  background:
+    /* jute weave — subtle diagonal crosshatch */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 5px,
+      rgba(120,70,20,0.08) 5px,
+      rgba(120,70,20,0.08) 6px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 5px,
+      rgba(120,70,20,0.08) 5px,
+      rgba(120,70,20,0.08) 6px
+    ),
+    /* warm beige base — matches the village wallpaper */
+    linear-gradient(170deg, #c9a97a 0%, #b8955f 40%, #a8834e 100%);
+  border-right: 1px solid rgba(120,70,20,0.25) !important;
+  position: relative;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+}
+
+/* Remove the chunky right-edge strip */
+#sidebar::after { display: none; }
+
+/* Sidebar header — slightly darker beige */
+#sidebar > div:nth-child(2) {
+  background: rgba(100,55,15,0.18) !important;
+  border-bottom: 1px solid rgba(120,70,20,0.2) !important;
+}
+
+/* Text colors on sidebar — dark brown for readability on beige */
+#my-name  { color: #3a1c08 !important; }
+#my-uname { color: rgba(80,40,10,0.7) !important; }
+
+/* Search bar */
+#sidebar .search-wrap {
+  background: rgba(100,55,15,0.12) !important;
+  border-bottom: 1px solid rgba(120,70,20,0.15) !important;
+}
+#search-inp {
+  background: rgba(255,255,255,0.35) !important;
+  border: 1px solid rgba(120,70,20,0.25) !important;
+  color: #3a1c08 !important;
+}
+#search-inp::placeholder { color: rgba(80,40,10,0.45) !important; }
+#search-inp:focus { border-color: rgb(168,66,45) !important; background: rgba(255,255,255,0.5) !important; }
+
+/* Conversation item text */
+#conv-list div[style*="font-weight:600"] { color: #2e1505 !important; }
+#conv-list div[style*="color:var(--muted)"] { color: rgba(80,40,10,0.65) !important; }
+
+/* Conversation items hover */
+#conv-list div[style*="cursor:pointer"]:hover {
+  background: rgba(120,60,15,0.15) !important;
+}
+
+/* Warli decorative divider */
+.warli-divider {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px 2px;
+}
+.warli-divider svg { flex-shrink: 0; filter: drop-shadow(0 0 2px rgba(168,66,45,0.5)); }
+.warli-divider::before, .warli-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(120,60,15,0.4), transparent);
+}
+@media (max-width: 640px) {
+  :root { --sw: 100vw; }
+
+  #app-screen { position: relative; }
+
+  #sidebar {
+    position: fixed; top: 0; left: 0; height: 100%;
+    z-index: 50; transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    width: 85vw !important; min-width: unset !important;
+  }
+  #sidebar.open { transform: translateX(0); }
+
+  #mobile-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 49;
+  }
+  #sidebar.open ~ #mobile-overlay { display: block; }
+
+  #mobile-back {
+    display: flex !important;
+  }
+
+  .chat-area-wrap { width: 100%; }
+
+  #auth-screen > div:last-child {
+    margin: 16px; padding: 28px 20px; max-width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ─────────────────────────────────────────── -->
+<div id="auth-screen" class="screen" style="display:flex;align-items:center;justify-content:center;background:url('background.jfif') center center / cover no-repeat;position:relative;overflow-y:auto">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.45)"></div>
+  <div style="position:relative;z-index:1;
+    background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:28px;
+    padding:40px;
+    width:calc(100% - 32px);
+    max-width:420px;
+    margin:24px auto;
+    backdrop-filter:blur(32px) saturate(200%);
+    -webkit-backdrop-filter:blur(32px) saturate(200%);
+    box-shadow:0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.2)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="display:inline-block;width:96px;height:96px;border-radius:50%;overflow:hidden;margin-bottom:12px;box-shadow:0 4px 24px rgba(0,0,0,.5)">
+        <img src="logo.png.png" alt="Baithak Logo" style="width:142%;height:142%;object-fit:cover;object-position:center center;margin-left:-21%;margin-top:-10%" />
+      </div>
+      <h1 style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-.5px;text-shadow:0 2px 8px rgba(0,0,0,0.5)">Mahto Ji Ke Dalan</h1>
+      <p style="color:rgba(255,255,255,0.6);font-size:14px;margin-top:4px">The Digital Chaupal</p>
+    </div>
+    <div style="display:flex;background:rgba(0,0,0,0.3);border-radius:10px;padding:4px;margin-bottom:24px;gap:4px;border:1px solid rgba(255,255,255,0.1)">
+      <button id="tab-login" onclick="showTab('login')" style="flex:1;padding:10px;border:none;background:var(--accent);color:#fff;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(168,66,45,0.5)">Login</button>
+      <button id="tab-reg" onclick="showTab('register')" style="flex:1;padding:10px;border:none;background:transparent;color:rgba(255,255,255,0.6);border-radius:8px;cursor:pointer;font-size:14px;font-weight:500">Sign Up</button>
+    </div>
+    <!-- Login -->
+    <form id="login-form" onsubmit="handleLogin(event)" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="glass-label">Username</label>
+        <input id="li-u" type="text" placeholder="your_username" autocomplete="username" required class="glass-input" />
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="glass-label">Password</label>
+        <div style="position:relative">
+          <input id="li-p" type="password" placeholder="••••••••" autocomplete="current-password" required class="glass-input" style="padding-right:44px" />
+          <button type="button" onclick="togglePwd('li-p',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);padding:2px;display:flex;align-items:center" tabindex="-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="li-err" class="hidden" style="background:rgba(231,76,60,.2);border:1px solid rgba(231,76,60,.4);color:#ff8a80;padding:10px 14px;border-radius:8px;font-size:13px"></div>
+      <button type="submit" id="li-btn" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;box-shadow:0 4px 15px rgba(168,66,45,0.45)">Login</button>
+    </form>
+    <!-- Register -->
+    <form id="reg-form" class="hidden" onsubmit="handleRegister(event)" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="glass-label">Display Name</label>
+        <input id="rg-d" type="text" placeholder="Your Name" required class="glass-input" />
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="glass-label">Username</label>
+        <input id="rg-u" type="text" placeholder="unique_username" required class="glass-input" />
+        <small style="font-size:12px;color:rgba(255,255,255,0.4)">Letters, numbers, underscores only (3–20 chars)</small>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="glass-label">Password</label>
+        <div style="position:relative">
+          <input id="rg-p" type="password" placeholder="Min 6 characters" autocomplete="new-password" required class="glass-input" style="padding-right:44px" />
+          <button type="button" onclick="togglePwd('rg-p',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);padding:2px;display:flex;align-items:center" tabindex="-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="rg-err" class="hidden" style="background:rgba(231,76,60,.2);border:1px solid rgba(231,76,60,.4);color:#ff8a80;padding:10px 14px;border-radius:8px;font-size:13px"></div>
+      <button type="submit" id="rg-btn" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;box-shadow:0 4px 15px rgba(168,66,45,0.45)">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── CREATE GROUP MODAL ──────────────────────────────────── -->
+<div id="grp-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title">👥 Create a Group</div>
+    <input id="grp-name-inp" class="modal-input" type="text" placeholder="Group name..." maxlength="40" />
+    <div style="position:relative;margin-bottom:8px">
+      <input id="grp-member-inp" class="modal-input" type="text" placeholder="Search members by username or name..." style="margin-bottom:0" autocomplete="off" oninput="memberSearch()" onkeydown="memberInputKey(event)" />
+      <!-- Suggestions dropdown -->
+      <div id="member-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1e1210;border:1px solid var(--border);border-radius:10px;margin-top:4px;overflow:hidden;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.5)"></div>
+    </div>
+    <div class="modal-err" id="grp-err"></div>
+    <div id="grp-chips" style="min-height:32px;margin-bottom:4px"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="grp-member-count">0 members added</div>
+    <div class="modal-btn-row">
+      <button class="btn-ghost" onclick="closeGroupModal()">Cancel</button>
+      <button class="btn-accent" onclick="createGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GROUP INFO MODAL ───────────────────────────────────── -->
+<div id="grpinfo-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div id="gi-av" class="grp-av" style="width:56px;height:56px;font-size:26px;border-radius:16px"></div>
+      <div>
+        <div id="gi-name" style="font-size:20px;font-weight:700"></div>
+        <div id="gi-count" style="font-size:13px;color:var(--muted);margin-top:2px"></div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px">Members</div>
+    <div id="gi-members" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto"></div>
+    <div class="modal-btn-row" style="margin-top:20px">
+      <button class="btn-ghost" onclick="document.getElementById('grpinfo-modal').classList.add('hidden')">Close</button>
+      <button class="btn-accent" id="gi-leave-btn" onclick="leaveGroup()">Leave Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ─────────────────────────────────────────────── -->
+<div id="app-screen" class="screen hidden" style="display:flex;height:100vh;position:relative">
+
+  <!-- Mobile overlay (tap to close sidebar) -->
+  <div id="mobile-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" style="width:var(--sw);min-width:var(--sw);display:flex;flex-direction:column;overflow:hidden">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(120,70,20,0.2)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="my-av" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;flex-shrink:0;text-transform:uppercase"></div>
+        <div>
+          <div id="my-name" style="font-weight:600;font-size:14px"></div>
+          <div id="my-uname" style="font-size:12px;color:var(--muted)"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button onclick="openGroupModal()" title="New Group" style="background:transparent;border:none;color:rgba(80,35,8,0.6);font-size:18px;cursor:pointer;padding:6px;border-radius:8px" onmouseover="this.style.color='rgb(168,66,45)';this.style.background='rgba(168,66,45,.1)'" onmouseout="this.style.color='rgba(80,35,8,0.6)';this.style.background='transparent'">👥</button>
+        <button onclick="handleDeleteAccount()" title="Delete Account" style="background:transparent;border:none;color:rgba(80,35,8,0.6);cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.color='var(--danger)';this.style.background='rgba(231,76,60,.1)'" onmouseout="this.style.color='rgba(80,35,8,0.6)';this.style.background='transparent'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+        <button onclick="handleLogout()" title="Logout" style="background:transparent;border:none;color:rgba(80,35,8,0.6);cursor:pointer;padding:6px;border-radius:8px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.color='var(--danger)';this.style.background='rgba(231,76,60,.1)'" onmouseout="this.style.color='rgba(80,35,8,0.6)';this.style.background='transparent'">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5A8 8 0 1 0 15 4.5"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Search -->
+    <div class="search-wrap" style="padding:12px 16px;border-bottom:1px solid rgba(200,98,42,0.2)">
+      <input id="search-inp" type="text" placeholder="🔍  Search users..." oninput="handleSearch()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" />
+    </div>
+    <!-- Search Results -->
+    <div id="search-res" class="hidden" style="flex:1;overflow-y:auto;padding:8px 0">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 16px 4px">Search Results</div>
+      <div id="search-list"></div>
+    </div>
+    <!-- Conversations + Groups -->
+    <div id="conv-sec" style="flex:1;overflow-y:auto;padding:8px 0;background:transparent">
+      <div id="conv-list"></div>
+    </div>
+  </aside>
+
+  <!-- Chat Area -->
+  <main style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);min-width:0">
+    <!-- Mobile top bar (only visible on small screens) -->
+    <div id="mobile-topbar" style="display:none;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface)">
+      <button onclick="openSidebar()" style="background:transparent;border:none;color:var(--text);cursor:pointer;padding:4px;display:flex;align-items:center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div id="my-av-mob" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;text-transform:uppercase;flex-shrink:0"></div>
+      <span id="my-name-mob" style="font-weight:600;font-size:15px"></span>
+    </div>
+
+    <div id="chat-empty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);position:relative;overflow:hidden">
+      <!-- blurred village background -->
+      <div id="empty-bg" style="position:absolute;inset:0;background:url('village.jpg') center/cover no-repeat;filter:blur(6px);transform:scale(1.03);transition:filter 0.8s ease, transform 0.8s ease;z-index:0"></div>
+      <!-- dark tint -->
+      <div style="position:absolute;inset:0;background:rgba(20,8,3,0.22);z-index:1"></div>
+      <!-- content -->
+      <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:12px">
+        <div style="font-size:56px;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.5))">💬</div>
+        <h2 style="font-size:22px;color:#f0d9c8;text-shadow:0 2px 8px rgba(0,0,0,0.6)">Mahto Ji Ke Dalan me aapka swagat hai</h2>
+        <p style="font-size:14px;text-align:center;padding:0 20px;color:rgba(240,210,180,0.7)">Search for a friend or create a group to start chatting</p>
+      </div>
+    </div>
+    <!-- Chat Window -->
+    <div id="chat-win" class="hidden" style="display:flex;flex-direction:column;height:100%;position:relative;overflow:hidden">
+      <!-- Village background with unblur transition -->
+      <div id="chat-bg" style="position:absolute;inset:0;background:url('village.jpg') center center/cover no-repeat;z-index:0;filter:blur(14px);transform:scale(1.08);transition:filter 0.9s cubic-bezier(.4,0,.2,1), transform 0.9s cubic-bezier(.4,0,.2,1)"></div>
+      <!-- Vignette only — no blur on the image itself -->
+      <div style="position:absolute;inset:0;z-index:1;
+        background:
+          radial-gradient(ellipse at center, transparent 30%, rgba(10,4,2,0.45) 100%),
+          linear-gradient(to bottom, rgba(10,4,2,0.25) 0%, transparent 15%, transparent 80%, rgba(10,4,2,0.35) 100%);
+      "></div>
+
+      <!-- Chat Header — liquid glass -->
+      <div style="position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;
+        background:rgba(255,255,255,0.08);
+        backdrop-filter:blur(24px) saturate(180%);
+        -webkit-backdrop-filter:blur(24px) saturate(180%);
+        border-bottom:1px solid rgba(255,255,255,0.14);
+        box-shadow:0 2px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button id="mobile-back" onclick="goBackToSidebar()" style="display:none;background:transparent;border:none;color:#fff;cursor:pointer;padding:2px;margin-right:4px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div id="ch-av" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;text-transform:uppercase;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>
+          <div>
+            <div id="ch-name" style="font-weight:700;font-size:16px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>
+            <div id="ch-sub" style="font-size:12px;color:rgba(255,255,255,0.6)"></div>
+          </div>
+        </div>
+        <button id="ch-info-btn" class="hidden" onclick="openGroupInfo()" title="Group Info" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:20px;cursor:pointer;padding:6px;border-radius:8px" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">ℹ️</button>
+      </div>
+
+      <!-- Messages -->
+      <div id="msg-container" style="position:relative;z-index:2;flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:4px">
+        <div id="msg-list"></div>
+      </div>
+
+      <!-- Input bar — liquid glass -->
+      <div style="position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:12px 16px;
+        background:rgba(255,255,255,0.08);
+        backdrop-filter:blur(24px) saturate(180%);
+        -webkit-backdrop-filter:blur(24px) saturate(180%);
+        border-top:1px solid rgba(255,255,255,0.14);
+        box-shadow:0 -2px 16px rgba(0,0,0,0.2), inset 0 -1px 0 rgba(255,255,255,0.1)">
+        <input id="msg-inp" type="text" placeholder="Type a message..." onkeydown="handleMsgKey(event)" maxlength="1000"
+          style="flex:1;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:24px;padding:11px 18px;color:#fff;font-size:14px;outline:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)"
+          onfocus="this.style.borderColor='rgba(168,66,45,0.9)';this.style.background='rgba(255,255,255,0.18)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='rgba(255,255,255,0.12)'"
+        />
+        <button onclick="sendMessage()" style="background:rgb(168,66,45);color:#fff;border:none;border-radius:24px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(168,66,45,0.5)" onmouseover="this.style.background='rgb(145,55,37)'" onmouseout="this.style.background='rgb(168,66,45)'">Send ➤</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Storage ────────────────────────────────────────────────────
+const COLORS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#9b59b6','#e91e63','#00bcd4','#ff5722'];
+const GRP_COLORS = ['#6c63ff','#e91e63','#00bcd4','#ff5722','#2ecc71','#f1c40f','#9b59b6','#3498db'];
+
+function getDB() {
+  return {
+    users:    JSON.parse(localStorage.getItem('bk_users')    || '[]'),
+    messages: JSON.parse(localStorage.getItem('bk_messages') || '[]'),
+    groups:   JSON.parse(localStorage.getItem('bk_groups')   || '[]'),
+    gmsgs:    JSON.parse(localStorage.getItem('bk_gmsgs')    || '[]'),
+  };
+}
+function saveUsers(v)  { localStorage.setItem('bk_users',    JSON.stringify(v)); }
+function saveMsgs(v)   { localStorage.setItem('bk_messages', JSON.stringify(v)); }
+function saveGroups(v) { localStorage.setItem('bk_groups',   JSON.stringify(v)); }
+function saveGMsgs(v)  { localStorage.setItem('bk_gmsgs',    JSON.stringify(v)); }
+function nextId(arr)   { return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1; }
+
+async function hashPwd(pwd) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd + 'bk_salt'));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── State ──────────────────────────────────────────────────────
+let currentUser = null;
+let activeChat  = null; // { type:'dm'|'group', ... }
+let searchTimeout = null;
+let pendingMembers = []; // { id, username, display_name, avatar_color }
+
+// ── Init ───────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // One-time data reset (clears old test accounts)
+  if (!localStorage.getItem('bk_v2')) {
+    localStorage.removeItem('bk_users');
+    localStorage.removeItem('bk_messages');
+    localStorage.removeItem('bk_groups');
+    localStorage.removeItem('bk_gmsgs');
+    sessionStorage.removeItem('bk_session');
+    localStorage.setItem('bk_v2', '1');
+  }
+
+  const saved = sessionStorage.getItem('bk_session');
+  if (saved) { currentUser = JSON.parse(saved); enterApp(); }
+});
+
+// ── Auth Tabs ──────────────────────────────────────────────────
+function showTab(tab) {
+  const il = tab === 'login';
+  const base = 'flex:1;padding:10px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600';
+  document.getElementById('tab-login').style.cssText = base + (il  ? ';background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(168,66,45,0.5)' : ';background:transparent;color:rgba(255,255,255,0.6)');
+  document.getElementById('tab-reg').style.cssText   = base + (!il ? ';background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(168,66,45,0.5)' : ';background:transparent;color:rgba(255,255,255,0.6)');
+  document.getElementById('login-form').classList.toggle('hidden', !il);
+  document.getElementById('reg-form').classList.toggle('hidden', il);
+  document.getElementById('li-err').classList.add('hidden');
+  document.getElementById('rg-err').classList.add('hidden');
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.remove('hidden');
+}
+
+// ── Toggle password visibility ─────────────────────────────────
+function togglePwd(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.innerHTML = show
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  btn.style.color = show ? 'var(--accent)' : 'rgba(255,255,255,0.5)';
+}
+
+// ── Mobile sidebar helpers ─────────────────────────────────────
+function isMobile() { return window.innerWidth <= 640; }
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+function goBackToSidebar() {
+  // On mobile, hide chat and show sidebar
+  document.getElementById('chat-win').classList.add('hidden');
+  document.getElementById('chat-empty').classList.remove('hidden');
+  activeChat = null;
+  openSidebar();
+}
+
+// Show/hide mobile UI elements based on screen size
+function applyMobileLayout() {
+  const mob = isMobile();
+  const topbar = document.getElementById('mobile-topbar');
+  const backBtn = document.getElementById('mobile-back');
+  if (topbar) topbar.style.display = mob ? 'flex' : 'none';
+  if (backBtn) backBtn.style.display = mob ? 'flex' : 'none';
+  if (!mob) document.getElementById('sidebar').classList.remove('open');
+}
+
+window.addEventListener('resize', applyMobileLayout);
+
+// ── Register ───────────────────────────────────────────────────
+async function handleRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('rg-btn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  const display_name = document.getElementById('rg-d').value.trim();
+  const username     = document.getElementById('rg-u').value.trim().toLowerCase();
+  const password     = document.getElementById('rg-p').value;
+  if (!display_name || !username || !password) { showErr('rg-err','All fields required'); btn.disabled=false; btn.textContent='Create Account'; return; }
+  if (username.length < 3 || username.length > 20) { showErr('rg-err','Username must be 3–20 characters'); btn.disabled=false; btn.textContent='Create Account'; return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) { showErr('rg-err','Username: letters, numbers, underscores only'); btn.disabled=false; btn.textContent='Create Account'; return; }
+  if (password.length < 6) { showErr('rg-err','Password must be at least 6 characters'); btn.disabled=false; btn.textContent='Create Account'; return; }
+  const db = getDB();
+  if (db.users.find(u => u.username === username)) { showErr('rg-err','Username already taken'); btn.disabled=false; btn.textContent='Create Account'; return; }
+  const hash = await hashPwd(password);
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const user = { id: nextId(db.users), username, display_name, password: hash, avatar_color: color };
+  db.users.push(user); saveUsers(db.users);
+  currentUser = { id: user.id, username, display_name, avatar_color: color };
+  sessionStorage.setItem('bk_session', JSON.stringify(currentUser));
+  enterApp();
+  btn.disabled=false; btn.textContent='Create Account';
+}
+
+// ── Login ──────────────────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('li-btn');
+  btn.disabled = true; btn.textContent = 'Logging in...';
+  const username = document.getElementById('li-u').value.trim().toLowerCase();
+  const password = document.getElementById('li-p').value;
+  const db = getDB();
+  const user = db.users.find(u => u.username === username);
+  if (!user) { showErr('li-err','Invalid username or password'); btn.disabled=false; btn.textContent='Login'; return; }
+  const hash = await hashPwd(password);
+  if (hash !== user.password) { showErr('li-err','Invalid username or password'); btn.disabled=false; btn.textContent='Login'; return; }
+  currentUser = { id: user.id, username: user.username, display_name: user.display_name, avatar_color: user.avatar_color };
+  sessionStorage.setItem('bk_session', JSON.stringify(currentUser));
+  enterApp();
+  btn.disabled=false; btn.textContent='Login';
+}
+
+// ── Logout ─────────────────────────────────────────────────────
+function handleLogout() {
+  sessionStorage.removeItem('bk_session');
+  currentUser = null;
+
+  const appScreen  = document.getElementById('app-screen');
+  const authScreen = document.getElementById('auth-screen');
+
+  appScreen.classList.add('anim-exit');
+
+  setTimeout(() => {
+    appScreen.classList.add('hidden');
+    appScreen.classList.remove('anim-exit');
+    resetAppUI();
+
+    authScreen.classList.remove('hidden');
+    authScreen.classList.add('anim-enter');
+    setTimeout(() => authScreen.classList.remove('anim-enter'), 460);
+
+    document.getElementById('login-form').reset();
+    document.getElementById('reg-form').reset();
+    showTab('login');
+  }, 420);
+}
+
+// ── Delete Account ─────────────────────────────────────────────
+function handleDeleteAccount() {
+  if (!confirm(`Delete your account "@${currentUser.username}"?\n\nThis will permanently remove your account and all your messages. This cannot be undone.`)) return;
+
+  const db = getDB();
+  const myId = currentUser.id;
+
+  // Remove user
+  saveUsers(db.users.filter(u => u.id !== myId));
+  // Remove DMs involving this user
+  saveMsgs(db.messages.filter(m => m.sender_id !== myId && m.receiver_id !== myId));
+  // Remove from groups or delete groups they created
+  const updatedGroups = [];
+  db.groups.forEach(g => {
+    if (g.creator_id === myId) return; // delete group
+    g.members = g.members.filter(id => id !== myId);
+    if (g.members.length > 0) updatedGroups.push(g);
+  });
+  saveGroups(updatedGroups);
+  // Remove group messages from this user
+  saveGMsgs(db.gmsgs.filter(m => m.sender_id !== myId));
+
+  handleLogout();
+}
+
+// ── Reset App UI ───────────────────────────────────────────────
+function resetAppUI() {
+  activeChat = null;
+  document.getElementById('chat-win').classList.add('hidden');
+  document.getElementById('chat-empty').classList.remove('hidden');
+  document.getElementById('conv-list').innerHTML = '';
+  document.getElementById('search-inp').value = '';
+  document.getElementById('search-res').classList.add('hidden');
+  document.getElementById('conv-sec').classList.remove('hidden');
+  document.getElementById('msg-list').innerHTML = '';
+  document.getElementById('msg-inp').value = '';
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ── Enter App ──────────────────────────────────────────────────
+function enterApp() {
+  resetAppUI();
+
+  const authScreen = document.getElementById('auth-screen');
+  const appScreen  = document.getElementById('app-screen');
+
+  // Populate app content before showing
+  const av = document.getElementById('my-av');
+  av.textContent = currentUser.display_name[0];
+  av.style.background = currentUser.avatar_color;
+  document.getElementById('my-name').textContent = currentUser.display_name;
+  document.getElementById('my-uname').textContent = '@' + currentUser.username;
+
+  const avMob = document.getElementById('my-av-mob');
+  if (avMob) { avMob.textContent = currentUser.display_name[0]; avMob.style.background = currentUser.avatar_color; }
+  const nameMob = document.getElementById('my-name-mob');
+  if (nameMob) nameMob.textContent = currentUser.display_name;
+
+  // Slide auth screen up and out
+  authScreen.classList.add('anim-exit');
+
+  setTimeout(() => {
+    authScreen.classList.add('hidden');
+    authScreen.classList.remove('anim-exit');
+
+    appScreen.classList.remove('hidden');
+    appScreen.classList.add('anim-enter');
+
+    setTimeout(() => appScreen.classList.remove('anim-enter'), 460);
+
+    applyMobileLayout();
+    loadSidebar();
+    if (isMobile()) openSidebar();
+  }, 420);
+}
+</script>
+
+<script>
+// ── Sidebar (DMs + Groups merged) ──────────────────────────────
+function loadSidebar() {
+  const db = getDB();
+  const myId = currentUser.id;
+  const list = document.getElementById('conv-list');
+  list.innerHTML = '';
+
+  // ── DM conversations ──
+  const chatted = new Map();
+  db.messages.forEach(m => {
+    const otherId = m.sender_id === myId ? m.receiver_id : m.receiver_id === myId ? m.sender_id : null;
+    if (otherId === null) return;
+    if (!chatted.has(otherId) || new Date(m.created_at) > new Date(chatted.get(otherId).created_at))
+      chatted.set(otherId, m);
+  });
+
+  // ── Groups I'm in ──
+  const myGroups = db.groups.filter(g => g.members.includes(myId));
+
+  // Build unified list with timestamps for sorting
+  const items = [];
+
+  chatted.forEach((lastMsg, otherId) => {
+    const user = db.users.find(u => u.id === otherId);
+    if (!user) return;
+    items.push({ type: 'dm', user, lastMsg, ts: new Date(lastMsg.created_at) });
+  });
+
+  myGroups.forEach(g => {
+    const lastMsg = db.gmsgs.filter(m => m.group_id === g.id).sort((a,b) => new Date(b.created_at)-new Date(a.created_at))[0] || null;
+    items.push({ type: 'group', group: g, lastMsg, ts: lastMsg ? new Date(lastMsg.created_at) : new Date(g.created_at) });
+  });
+
+  items.sort((a,b) => b.ts - a.ts);
+
+  if (!items.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:32px 16px;line-height:1.8">No conversations yet.<br/>Search for a friend or<br/>create a group to start!</div>';
+    return;
+  }
+
+  // Section labels
+  let shownDM = false, shownGrp = false;
+
+  // Sort: show groups and DMs interleaved by time, but add labels on first occurrence
+  items.forEach(item => {
+    if (item.type === 'dm') {
+      if (!shownDM) { list.appendChild(sectionLabel('Direct Messages')); shownDM = true; }
+      const preview = item.lastMsg
+        ? (item.lastMsg.sender_id === myId ? 'You: ' : '') + trunc(item.lastMsg.content, 32)
+        : '';
+      const el = makeDMItem(item.user, preview);
+      if (activeChat && activeChat.type === 'dm' && activeChat.user.id === item.user.id)
+        el.style.background = 'rgba(168,66,45,0.28)'; el.style.borderLeft = '3px solid rgb(168,66,45)'; el.style.paddingLeft = '13px';
+      list.appendChild(el);
+    } else {
+      if (!shownGrp) { list.appendChild(sectionLabel('Groups')); shownGrp = true; }
+      const preview = item.lastMsg
+        ? (item.lastMsg.sender_id === myId ? 'You: ' : getSenderName(item.lastMsg.sender_id, db) + ': ') + trunc(item.lastMsg.content, 28)
+        : `${item.group.members.length} members`;
+      const el = makeGroupItem(item.group, preview);
+      if (activeChat && activeChat.type === 'group' && activeChat.group.id === item.group.id)
+        el.style.background = 'rgba(168,66,45,0.28)'; el.style.borderLeft = '3px solid rgb(168,66,45)'; el.style.paddingLeft = '13px';
+      list.appendChild(el);
+    }
+  });
+}
+
+function sectionLabel(text) {
+  const wrap = document.createElement('div');
+
+  // Warli art divider
+  const warli = document.createElement('div');
+  warli.className = 'warli-divider';
+  // Warli-style stick figure + sun motif as inline SVG
+  warli.innerHTML = `
+    <svg width="72" height="28" viewBox="0 0 72 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- sun with rays -->
+      <circle cx="10" cy="14" r="4" stroke="rgba(140,55,15,0.8)" stroke-width="1.8"/>
+      <line x1="10" y1="6"  x2="10" y2="3"  stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="10" y1="22" x2="10" y2="25" stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="2"  y1="14" x2="0"  y2="14" stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="18" y1="14" x2="21" y2="14" stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="4.3" y1="8.3"  x2="2.2" y2="6.2"  stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="15.7" y1="19.7" x2="17.8" y2="21.8" stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="15.7" y1="8.3"  x2="17.8" y2="6.2"  stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <line x1="4.3"  y1="19.7" x2="2.2"  y2="21.8" stroke="rgba(140,55,15,0.8)" stroke-width="1.5"/>
+      <!-- warli stick figure -->
+      <circle cx="40" cy="6" r="3" stroke="rgb(168,66,45)" stroke-width="1.8" fill="rgba(168,66,45,0.15)"/>
+      <line x1="40" y1="9"  x2="40" y2="19" stroke="rgb(168,66,45)" stroke-width="1.8"/>
+      <line x1="34" y1="13" x2="46" y2="13" stroke="rgb(168,66,45)" stroke-width="1.8"/>
+      <line x1="40" y1="19" x2="36" y2="26" stroke="rgb(168,66,45)" stroke-width="1.8"/>
+      <line x1="40" y1="19" x2="44" y2="26" stroke="rgb(168,66,45)" stroke-width="1.8"/>
+      <!-- diamond motif -->
+      <polygon points="62,8 68,14 62,20 56,14" stroke="rgba(140,55,15,0.8)" stroke-width="1.8" fill="rgba(168,66,45,0.1)"/>
+      <circle cx="62" cy="14" r="2" fill="rgba(140,55,15,0.8)"/>
+      <line x1="62" y1="8"  x2="62" y2="5"  stroke="rgba(140,55,15,0.6)" stroke-width="1.2"/>
+      <line x1="62" y1="20" x2="62" y2="23" stroke="rgba(140,55,15,0.6)" stroke-width="1.2"/>
+    </svg>`;
+  wrap.appendChild(warli);
+
+  const label = document.createElement('div');
+  label.style.cssText = 'font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:rgba(80,35,8,0.7);padding:2px 16px 6px';
+  label.textContent = text;
+  wrap.appendChild(label);
+
+  return wrap;
+}
+
+function getSenderName(senderId, db) {
+  const u = db.users.find(u => u.id === senderId);
+  return u ? u.display_name : 'Someone';
+}
+
+function trunc(s, n) { return s && s.length > n ? s.slice(0,n) + '…' : (s || ''); }
+
+// ── DM item ────────────────────────────────────────────────────
+function makeDMItem(user, preview) {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:background .15s';
+  div.onmouseover = () => { if (!(activeChat && activeChat.type==='dm' && activeChat.user.id===user.id)) div.style.background='rgba(120,60,15,0.18)'; };
+  div.onmouseout  = () => { if (!(activeChat && activeChat.type==='dm' && activeChat.user.id===user.id)) div.style.background='transparent'; };
+  div.onclick = () => openDM(user);
+
+  const av = document.createElement('div');
+  av.style.cssText = 'width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;text-transform:uppercase';
+  av.textContent = user.display_name[0]; av.style.background = user.avatar_color;
+
+  const info = document.createElement('div');
+  info.style.cssText = 'flex:1;min-width:0';
+  info.innerHTML = `<div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(user.display_name)}</div>
+    <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(preview)}</div>`;
+
+  div.appendChild(av); div.appendChild(info);
+  return div;
+}
+
+// ── Group item ─────────────────────────────────────────────────
+function makeGroupItem(group, preview) {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:background .15s';
+  div.onmouseover = () => { if (!(activeChat && activeChat.type==='group' && activeChat.group.id===group.id)) div.style.background='rgba(120,60,15,0.18)'; };
+  div.onmouseout  = () => { if (!(activeChat && activeChat.type==='group' && activeChat.group.id===group.id)) div.style.background='transparent'; };
+  div.onclick = () => openGroup(group);
+
+  const av = document.createElement('div');
+  av.className = 'grp-av';
+  av.style.background = group.color;
+  av.textContent = '👥';
+
+  const info = document.createElement('div');
+  info.style.cssText = 'flex:1;min-width:0';
+  info.innerHTML = `<div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(group.name)}</div>
+    <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(preview)}</div>`;
+
+  div.appendChild(av); div.appendChild(info);
+  return div;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Search ─────────────────────────────────────────────────────
+function handleSearch() {
+  clearTimeout(searchTimeout);
+  const q = document.getElementById('search-inp').value.trim().toLowerCase();
+  if (!q) {
+    document.getElementById('search-res').classList.add('hidden');
+    document.getElementById('conv-sec').classList.remove('hidden');
+    return;
+  }
+  searchTimeout = setTimeout(() => {
+    const db = getDB();
+    const results = db.users.filter(u => u.id !== currentUser.id && u.username.includes(q)).slice(0,10);
+    const list = document.getElementById('search-list');
+    list.innerHTML = '';
+    if (!results.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:24px 16px">No users found</div>';
+    } else {
+      results.forEach(u => list.appendChild(makeDMItem(u, '@' + u.username)));
+    }
+    document.getElementById('search-res').classList.remove('hidden');
+    document.getElementById('conv-sec').classList.add('hidden');
+  }, 250);
+}
+</script>
+
+<script>
+// ── Open DM ────────────────────────────────────────────────────
+function openDM(user) {
+  activeChat = { type: 'dm', user };
+  clearSearch();
+  setHeader(user.display_name, '@' + user.username, user.avatar_color, user.display_name[0], false, false);
+  showChatWin();
+  loadDMMessages();
+  loadSidebar();
+  if (isMobile()) closeSidebar();
+  document.getElementById('msg-inp').focus();
+}
+
+// ── Open Group ─────────────────────────────────────────────────
+function openGroup(group) {
+  const db = getDB();
+  group = db.groups.find(g => g.id === group.id) || group;
+  activeChat = { type: 'group', group };
+  clearSearch();
+  const memberCount = group.members.length + ' member' + (group.members.length !== 1 ? 's' : '');
+  setHeader(group.name, memberCount, group.color, '👥', true, true);
+  showChatWin();
+  loadGroupMessages();
+  loadSidebar();
+  if (isMobile()) closeSidebar();
+  document.getElementById('msg-inp').focus();
+}
+
+function clearSearch() {
+  document.getElementById('search-inp').value = '';
+  document.getElementById('search-res').classList.add('hidden');
+  document.getElementById('conv-sec').classList.remove('hidden');
+}
+
+function setHeader(name, sub, color, icon, isGroup, showInfo) {
+  const av = document.getElementById('ch-av');
+  if (isGroup) {
+    av.style.cssText = 'width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0';
+    av.textContent = icon;
+    av.style.background = color;
+  } else {
+    av.style.cssText = 'width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;text-transform:uppercase';
+    av.textContent = icon;
+    av.style.background = color;
+  }
+  document.getElementById('ch-name').textContent = name;
+  document.getElementById('ch-sub').textContent = sub;
+  document.getElementById('ch-info-btn').classList.toggle('hidden', !showInfo);
+}
+
+function showChatWin() {
+  // First: briefly show the blurred village on the chat window, then unblur
+  const bg = document.getElementById('chat-bg');
+  if (bg) {
+    bg.style.filter = 'blur(14px)';
+    bg.style.transform = 'scale(1.08)';
+    // Trigger unblur on next frame so transition fires
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        bg.style.filter = 'blur(0px)';
+        bg.style.transform = 'scale(1)';
+      });
+    });
+  }
+  document.getElementById('chat-empty').classList.add('hidden');
+  document.getElementById('chat-win').classList.remove('hidden');
+}
+
+// ── DM Messages ────────────────────────────────────────────────
+function loadDMMessages() {
+  const db = getDB();
+  const myId = currentUser.id;
+  const otherId = activeChat.user.id;
+  const msgs = db.messages
+    .filter(m => (m.sender_id===myId && m.receiver_id===otherId) || (m.sender_id===otherId && m.receiver_id===myId))
+    .sort((a,b) => new Date(a.created_at)-new Date(b.created_at));
+  renderMessages(msgs, false);
+}
+
+// ── Group Messages ─────────────────────────────────────────────
+function loadGroupMessages() {
+  const db = getDB();
+  const gid = activeChat.group.id;
+  const msgs = db.gmsgs.filter(m => m.group_id === gid)
+    .sort((a,b) => new Date(a.created_at)-new Date(b.created_at));
+  renderMessages(msgs, true, db);
+}
+
+function renderMessages(msgs, isGroup, db) {
+  const list = document.getElementById('msg-list');
+  list.innerHTML = '';
+  if (!msgs.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:40px 16px">No messages yet. Say hello! 👋</div>';
+    return;
+  }
+  let lastDate = null;
+  msgs.forEach(msg => {
+    const d = fmtDate(msg.created_at);
+    if (d !== lastDate) {
+      const div = document.createElement('div');
+      div.style.cssText = 'text-align:center;font-size:12px;color:rgba(255,255,255,0.7);margin:16px 0 8px;background:rgba(0,0,0,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:20px;padding:3px 14px;display:inline-block;align-self:center;border:1px solid rgba(255,255,255,0.12)';
+      div.textContent = d;
+      list.appendChild(div);
+      lastDate = d;
+    }
+    appendMsg(msg, msg.sender_id === currentUser.id, isGroup, db);
+  });
+  scrollBottom();
+}
+
+// ── Append Message ─────────────────────────────────────────────
+function appendMsg(msg, isMine, isGroup, db) {
+  const list = document.getElementById('msg-list');
+  const empty = list.querySelector('[data-empty]');
+  if (empty) empty.remove();
+
+  db = db || getDB();
+
+  if (isGroup) {
+    const sender = db.users.find(u => u.id === msg.sender_id);
+    const senderName = sender ? sender.display_name : 'Unknown';
+    const senderColor = sender ? sender.avatar_color : '#888';
+    const senderInitial = senderName[0].toUpperCase();
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `display:flex;align-items:flex-end;gap:8px;margin-bottom:6px;flex-direction:${isMine ? 'row-reverse' : 'row'}`;
+
+    // Avatar (hidden for own messages, shown for others)
+    if (!isMine) {
+      const av = document.createElement('div');
+      av.style.cssText = `width:30px;height:30px;border-radius:50%;background:${senderColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;text-transform:uppercase;margin-bottom:2px`;
+      av.textContent = senderInitial;
+      av.title = senderName;
+      wrapper.appendChild(av);
+    }
+
+    // Bubble + name + time column
+    const col = document.createElement('div');
+    col.style.cssText = `display:flex;flex-direction:column;max-width:65%;${isMine ? 'align-items:flex-end' : 'align-items:flex-start'}`;
+
+    if (!isMine) {
+      const nameEl = document.createElement('div');
+      nameEl.style.cssText = 'font-size:11px;font-weight:700;color:rgba(40,15,5,0.85);margin-bottom:3px;padding-left:4px;text-shadow:0 1px 3px rgba(255,255,255,0.4)';
+      nameEl.textContent = senderName;
+      col.appendChild(nameEl);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;${
+      isMine
+        ? 'background:rgb(168,66,45);color:#fff;border-bottom-right-radius:4px;box-shadow:0 2px 10px rgba(168,66,45,0.4)'
+        : 'background:rgba(60,20,8,0.72);color:#f0d9c8;border-bottom-left-radius:4px;border:1px solid rgba(200,98,42,0.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 2px 12px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,180,120,0.15)'
+    }`;
+    bubble.textContent = msg.content;
+
+    const time = document.createElement('div');
+    time.style.cssText = `font-size:11px;color:rgba(255,255,255,0.55);padding:3px 4px 0;${isMine ? 'text-align:right' : ''}`;
+    time.textContent = fmtTime(msg.created_at);
+
+    col.appendChild(bubble);
+    col.appendChild(time);
+    wrapper.appendChild(col);
+
+    // Spacer on own messages side so it doesn't hug the edge
+    if (isMine) {
+      const spacer = document.createElement('div');
+      spacer.style.cssText = 'width:30px;flex-shrink:0';
+      wrapper.appendChild(spacer);
+    }
+
+    list.appendChild(wrapper);
+
+  } else {
+    // DM — original layout unchanged
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;align-items:flex-end;gap:8px;margin-bottom:2px;flex-direction:${isMine ? 'row-reverse' : 'row'}`;
+
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `max-width:65%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;${
+      isMine
+        ? 'background:rgb(168,66,45);color:#fff;border-bottom-right-radius:4px;box-shadow:0 2px 10px rgba(168,66,45,0.4)'
+        : 'background:rgba(60,20,8,0.72);color:#f0d9c8;border-bottom-left-radius:4px;border:1px solid rgba(200,98,42,0.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 2px 12px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,180,120,0.15)'
+    }`;
+    bubble.textContent = msg.content;
+
+    const time = document.createElement('div');
+    time.style.cssText = `font-size:11px;color:rgba(255,255,255,0.55);padding:0 4px;align-self:flex-end;${isMine ? 'text-align:right' : ''}`;
+    time.textContent = fmtTime(msg.created_at);
+
+    row.appendChild(bubble);
+    row.appendChild(time);
+    list.appendChild(row);
+  }
+}
+
+// ── Send Message ───────────────────────────────────────────────
+function sendMessage() {
+  if (!activeChat) return;
+  const inp = document.getElementById('msg-inp');
+  const content = inp.value.trim();
+  if (!content) return;
+
+  const db = getDB();
+
+  if (activeChat.type === 'dm') {
+    const msg = { id: nextId(db.messages), sender_id: currentUser.id, receiver_id: activeChat.user.id, content, created_at: new Date().toISOString() };
+    db.messages.push(msg); saveMsgs(db.messages);
+    appendMsg(msg, true, false);
+  } else {
+    const msg = { id: nextId(db.gmsgs), group_id: activeChat.group.id, sender_id: currentUser.id, content, created_at: new Date().toISOString() };
+    db.gmsgs.push(msg); saveGMsgs(db.gmsgs);
+    appendMsg(msg, true, true, db);
+  }
+
+  scrollBottom();
+  loadSidebar();
+  inp.value = '';
+  inp.focus();
+}
+
+function handleMsgKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+// ── Cross-tab sync via storage events ─────────────────────────
+window.addEventListener('storage', (e) => {
+  if (!currentUser) return;
+  if (e.key === 'bk_messages' || e.key === 'bk_gmsgs') {
+    // Reload active chat messages if relevant
+    if (activeChat) {
+      if (activeChat.type === 'dm') loadDMMessages();
+      else loadGroupMessages();
+    }
+    loadSidebar();
+  }
+});
+
+// ── Helpers ────────────────────────────────────────────────────
+function scrollBottom() { const c = document.getElementById('msg-container'); c.scrollTop = c.scrollHeight; }
+function fmtTime(s) { return new Date(s).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); }
+function fmtDate(s) {
+  const d = new Date(s), t = new Date(), y = new Date(t);
+  y.setDate(t.getDate()-1);
+  if (d.toDateString()===t.toDateString()) return 'Today';
+  if (d.toDateString()===y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { month:'long', day:'numeric', year:'numeric' });
+}
+</script>
+
+<script>
+// ── Create Group Modal ─────────────────────────────────────────
+function openGroupModal() {
+  pendingMembers = [];
+  memberSuggestIdx = -1;
+  document.getElementById('grp-name-inp').value = '';
+  document.getElementById('grp-member-inp').value = '';
+  document.getElementById('grp-err').textContent = '';
+  document.getElementById('grp-chips').innerHTML = '';
+  document.getElementById('grp-member-count').textContent = '0 members added';
+  hideMemberSuggestions();
+  document.getElementById('grp-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('grp-name-inp').focus(), 50);
+}
+
+function closeGroupModal() {
+  hideMemberSuggestions();
+  document.getElementById('grp-modal').classList.add('hidden');
+}
+
+// Close modal on overlay click
+document.getElementById('grp-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeGroupModal();
+});
+
+// ── Member live search ─────────────────────────────────────────
+let memberSuggestIdx = -1;
+
+function memberSearch() {
+  const q = document.getElementById('grp-member-inp').value.trim().toLowerCase();
+  memberSuggestIdx = -1;
+  if (!q) { hideMemberSuggestions(); return; }
+
+  const db = getDB();
+  const already = pendingMembers.map(m => m.id);
+  const results = db.users.filter(u =>
+    u.id !== currentUser.id &&
+    !already.includes(u.id) &&
+    (u.username.includes(q) || u.display_name.toLowerCase().includes(q))
+  ).slice(0, 6);
+
+  const box = document.getElementById('member-suggestions');
+  if (!results.length) { hideMemberSuggestions(); return; }
+
+  box.innerHTML = '';
+  results.forEach((u, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .15s';
+    row.dataset.idx = i;
+    row.onmouseenter = () => { memberSuggestIdx = i; highlightSuggestion(); };
+    row.onmouseleave = () => {};
+    row.onclick = () => addMemberFromSuggestion(u);
+
+    const av = document.createElement('div');
+    av.style.cssText = `width:32px;height:32px;border-radius:50%;background:${u.avatar_color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;text-transform:uppercase`;
+    av.textContent = u.display_name[0];
+
+    const info = document.createElement('div');
+    // Highlight matching part
+    const nameHL = highlight(u.display_name, q);
+    const unameHL = highlight('@' + u.username, q);
+    info.innerHTML = `<div style="font-weight:600;font-size:14px">${nameHL}</div><div style="font-size:12px;color:var(--muted)">${unameHL}</div>`;
+
+    row.appendChild(av); row.appendChild(info);
+    box.appendChild(row);
+  });
+
+  box.style.display = 'block';
+}
+
+function highlight(text, q) {
+  const safe = esc(text);
+  const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return safe.replace(new RegExp(safeQ, 'gi'), m => `<span style="color:rgb(168,66,45);font-weight:700">${m}</span>`);
+}
+
+function hideMemberSuggestions() {
+  document.getElementById('member-suggestions').style.display = 'none';
+  memberSuggestIdx = -1;
+}
+
+function highlightSuggestion() {
+  const rows = document.getElementById('member-suggestions').children;
+  Array.from(rows).forEach((r, i) => {
+    r.style.background = i === memberSuggestIdx ? 'rgba(168,66,45,0.2)' : 'transparent';
+  });
+}
+
+function memberInputKey(e) {
+  const box = document.getElementById('member-suggestions');
+  const rows = box.children;
+  if (box.style.display === 'none' || !rows.length) {
+    if (e.key === 'Enter') { e.preventDefault(); }
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    memberSuggestIdx = Math.min(memberSuggestIdx + 1, rows.length - 1);
+    highlightSuggestion();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    memberSuggestIdx = Math.max(memberSuggestIdx - 1, 0);
+    highlightSuggestion();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (memberSuggestIdx >= 0 && rows[memberSuggestIdx]) {
+      rows[memberSuggestIdx].click();
+    }
+  } else if (e.key === 'Escape') {
+    hideMemberSuggestions();
+  }
+}
+
+function addMemberFromSuggestion(user) {
+  pendingMembers.push({ id: user.id, username: user.username, display_name: user.display_name, avatar_color: user.avatar_color });
+  document.getElementById('grp-member-inp').value = '';
+  hideMemberSuggestions();
+  document.getElementById('grp-err').textContent = '';
+  renderChips();
+  document.getElementById('grp-member-inp').focus();
+}
+
+// Keep old addMemberChip for any direct calls (now unused but safe)
+function addMemberChip() {}
+
+function renderChips() {
+  const container = document.getElementById('grp-chips');
+  container.innerHTML = '';
+  pendingMembers.forEach((m, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'member-chip';
+    const av = `<span style="width:18px;height:18px;border-radius:50%;background:${m.avatar_color};display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;flex-shrink:0">${m.display_name[0]}</span>`;
+    chip.innerHTML = `${av} ${esc(m.display_name)} <button class="chip-remove" onclick="removeChip(${i})">×</button>`;
+    container.appendChild(chip);
+  });
+  document.getElementById('grp-member-count').textContent = `${pendingMembers.length} member${pendingMembers.length !== 1 ? 's' : ''} added`;
+}
+
+function removeChip(i) {
+  pendingMembers.splice(i, 1);
+  renderChips();
+}
+
+function createGroup() {
+  const name = document.getElementById('grp-name-inp').value.trim();
+  document.getElementById('grp-err').textContent = '';
+  if (!name) { document.getElementById('grp-err').textContent = 'Please enter a group name.'; return; }
+  if (name.length > 40) { document.getElementById('grp-err').textContent = 'Name too long (max 40 chars).'; return; }
+  if (pendingMembers.length === 0) { document.getElementById('grp-err').textContent = 'Add at least one member.'; return; }
+
+  const db = getDB();
+  const memberIds = [currentUser.id, ...pendingMembers.map(m => m.id)];
+  const color = GRP_COLORS[Math.floor(Math.random() * GRP_COLORS.length)];
+  const group = { id: nextId(db.groups), name, color, creator_id: currentUser.id, members: memberIds, created_at: new Date().toISOString() };
+  db.groups.push(group);
+  saveGroups(db.groups);
+
+  closeGroupModal();
+  loadSidebar();
+  openGroup(group);
+}
+
+// ── Group Info Modal ───────────────────────────────────────────
+function openGroupInfo() {
+  if (!activeChat || activeChat.type !== 'group') return;
+  const db = getDB();
+  const group = db.groups.find(g => g.id === activeChat.group.id);
+  if (!group) return;
+
+  const av = document.getElementById('gi-av');
+  av.textContent = '👥'; av.style.background = group.color;
+  document.getElementById('gi-name').textContent = group.name;
+  document.getElementById('gi-count').textContent = `${group.members.length} member${group.members.length!==1?'s':''}`;
+
+  const memberList = document.getElementById('gi-members');
+  memberList.innerHTML = '';
+  group.members.forEach(mid => {
+    const u = db.users.find(u => u.id === mid);
+    if (!u) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0';
+    const av2 = document.createElement('div');
+    av2.style.cssText = 'width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0;text-transform:uppercase';
+    av2.textContent = u.display_name[0]; av2.style.background = u.avatar_color;
+    const info = document.createElement('div');
+    const isCreator = mid === group.creator_id;
+    const isMe = mid === currentUser.id;
+    info.innerHTML = `<div style="font-weight:600;font-size:14px">${esc(u.display_name)}${isMe?' <span style="font-size:11px;color:var(--muted)">(you)</span>':''}</div>
+      <div style="font-size:12px;color:var(--muted)">@${esc(u.username)}${isCreator?' · <span style="color:var(--accent)">Admin</span>':''}</div>`;
+    row.appendChild(av2); row.appendChild(info);
+    memberList.appendChild(row);
+  });
+
+  // Show leave or delete button
+  const leaveBtn = document.getElementById('gi-leave-btn');
+  if (group.creator_id === currentUser.id) {
+    leaveBtn.textContent = 'Delete Group';
+    leaveBtn.style.background = 'var(--danger)';
+  } else {
+    leaveBtn.textContent = 'Leave Group';
+    leaveBtn.style.background = 'var(--danger)';
+  }
+
+  document.getElementById('grpinfo-modal').classList.remove('hidden');
+}
+
+document.getElementById('grpinfo-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.add('hidden');
+});
+
+function leaveGroup() {
+  if (!activeChat || activeChat.type !== 'group') return;
+  const db = getDB();
+  const gid = activeChat.group.id;
+  const group = db.groups.find(g => g.id === gid);
+  if (!group) return;
+
+  if (group.creator_id === currentUser.id) {
+    // Delete group entirely
+    const idx = db.groups.findIndex(g => g.id === gid);
+    db.groups.splice(idx, 1);
+    // Remove group messages
+    const filtered = db.gmsgs.filter(m => m.group_id !== gid);
+    saveGMsgs(filtered);
+  } else {
+    // Remove self from members
+    group.members = group.members.filter(id => id !== currentUser.id);
+  }
+  saveGroups(db.groups);
+
+  document.getElementById('grpinfo-modal').classList.add('hidden');
+  activeChat = null;
+  document.getElementById('chat-win').classList.add('hidden');
+  document.getElementById('chat-empty').classList.remove('hidden');
+  loadSidebar();
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
